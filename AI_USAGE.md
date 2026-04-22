@@ -2,84 +2,66 @@
 
 ## Tools Used
 
-- **Cursor** — editor with inline AI for scaffolding, refactoring,
-  and debugging during development.
-- **Google Gemini 1.5 Flash** — runtime LLM used by the tool itself
-  to analyze articles (free tier via Google AI Studio).
-- **`google-generativeai`** Python SDK — client library for calling
-  the Gemini API.
+- Cursor for in-editor code assistance during development.
+- Gemini 2.5 Flash via the Google AI Studio free tier as the runtime LLM
+  the tool calls to do the analysis.
+- `google-genai` Python SDK as the client library.
 
-## Example Prompts
+## Example Prompts (to the coding assistant)
 
-Prompts I used during development (to the coding assistant, not to Gemini
-at runtime):
-
-1. "Scaffold a small Python CLI that takes N article file paths as
-   arguments and reads them into memory. Use only the standard library
-   for the I/O."
-2. "Show me the minimum code to call Gemini 1.5 Flash via the
-   `google-generativeai` SDK with a single text prompt and print the
-   response."
-3. "Write a prompt that makes the model output exactly three markdown
-   sections: per-article analysis, perspective comparison, and balanced
-   summary. Constrain the structure tightly."
-4. "The model keeps prefixing responses with 'Here is your analysis:'.
-   How do I suppress that?"
-5. "My balanced summary is echoing the tone of the last article. What
-   prompt change would force it to strip loaded language instead of
-   averaging it?"
-6. "Give me two short sample news articles on the same fictional event
-   with clearly opposed framing — one pro-business, one labor-focused —
-   so I can test the analyzer."
-7. "What's a safe pattern for handling an API key in a small Python
-   project that I'm pushing to GitHub?"
-8. "Write a concise README that explains how to install dependencies,
-   set the API key on Windows and Unix, and run the tool."
+1. "Write a small Python CLI that takes N article file paths as arguments
+   and reads them. Standard library only for I/O."
+2. "Show the minimum code to call Gemini via the `google-genai` SDK with
+   one text prompt and print the response."
+3. "Write a prompt that forces the model to output exactly three markdown
+   sections: per-article analysis, perspective comparison, balanced
+   summary."
+4. "The model keeps prefixing 'Here is your analysis:'. How do I stop it?"
+5. "The summary leans toward whichever article comes last. What prompt
+   change makes it strip loaded language instead of averaging tone?"
+6. "Give me two short fake news articles on the same event with opposite
+   framing so I can test the analyzer."
+7. "What's the safe way to handle an API key in a small Python repo I'm
+   pushing to GitHub?"
+8. "I'm getting `404 models/gemini-1.5-flash is not found`. What's the
+   current model name and SDK?"
 
 ## What AI Helped With
 
-- Getting the Gemini SDK call right on the first try (easy to miss
-  `genai.configure` or the model name format).
-- Iterating on the system prompt — the analysis quality is almost
-  entirely a function of prompt wording, and fast iteration with an
-  AI was the fastest way to converge.
-- Drafting the two sample articles with deliberately opposed framing,
-  which made it possible to sanity-check the output without scraping
-  real news.
-- Writing boilerplate docs (README sections, .gitignore).
+- Getting the Gemini SDK call right without reading the full docs.
+- Iterating quickly on the prompt wording, which is what most of the
+  output quality depends on.
+- Writing two contrasting sample articles to test against without having
+  to find real ones.
+- Boilerplate like `.gitignore` and the README skeleton.
 
 ## What I Modified or Fixed
 
-- The AI's first scaffold used `argparse` with three named flags — I
-  replaced it with positional `sys.argv` because the tool only takes
-  a list of files and doesn't need flags.
-- The AI's initial prompt was long and chatty; I trimmed it to the
-  exact markdown structure and dropped hedging language so the model
-  would stop adding meta-commentary.
-- The AI suggested wrapping the API call in a try/except and retrying
-  on failure. I removed that — for a one-shot CLI, a plain crash is
-  more useful than a silent retry loop.
-- I added an explicit check for the `GEMINI_API_KEY` env var up front
-  so the tool fails fast with a clear message instead of deep inside
-  the SDK.
-- Sample articles were originally too long; I shortened them so the
-  end-to-end demo runs under a couple of seconds.
+- The first scaffold used `argparse` with named flags. Replaced with
+  positional `sys.argv` because the tool only takes a list of files.
+- The first prompt was long and chatty. Trimmed to just the structure
+  the model needed to follow.
+- The assistant suggested wrapping the API call in try/except with
+  retries. Removed it, since for a one-shot CLI a plain crash is more
+  useful than a silent retry.
+- Added an explicit `GEMINI_API_KEY` check up front so the tool fails
+  fast with a clear message instead of failing inside the SDK.
+- Sample articles were too long initially. Shortened them so the demo
+  runs in a couple of seconds.
+- The first version used `google-generativeai` and `gemini-1.5-flash`,
+  both of which are now deprecated. Migrated to `google-genai` and
+  `gemini-2.5-flash`.
 
-## What I Learned About Using AI
+## What I Learned
 
-- **Tight prompts beat long prompts.** The single biggest quality jump
-  came from specifying the exact markdown structure rather than
-  describing what I wanted in prose.
-- **The AI over-engineers by default.** It added retries, argparse,
-  logging, and exception handling I didn't need. Stripping those out
-  was most of the editing work.
-- **AI is great for the unfamiliar parts.** I hadn't used the Gemini
-  SDK before — getting the first working call took maybe a minute with
-  AI assistance instead of a trip through the docs.
-- **Verify, don't trust.** When the balanced summary came back leaning
-  one way, I only noticed because I read it. An AI won't flag its own
-  bias — you have to test with adversarial inputs (which is why the
-  sample articles are deliberately opposed).
-- **AI-generated code is a starting point, not a finish line.** Most
-  of what the assistant produced needed at least one round of
-  simplification before it matched what the project actually needs.
+- The output is mostly a function of the prompt. Specifying the exact
+  output structure helped much more than describing what I wanted in
+  prose.
+- The assistant adds things I don't need by default (retries, argparse,
+  logging). A lot of the work was deleting that.
+- For libraries I haven't used, the assistant got me to a working call
+  faster than reading the docs would have.
+- AI suggestions can be outdated. The first SDK and model name it gave
+  me were both deprecated and I had to debug the 404 myself.
+- The output of the analyzer needs human checking. The model's idea of
+  "balanced" sometimes wasn't, and I only caught it because I read it.
