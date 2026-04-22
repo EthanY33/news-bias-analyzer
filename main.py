@@ -1,6 +1,6 @@
 import os
 import sys
-import google.generativeai as genai
+from google import genai
 
 
 PROMPT_TEMPLATE = """You are a news bias analyzer. Below are {n} articles from different
@@ -57,9 +57,11 @@ def main():
     articles = read_articles(sys.argv[1:])
     prompt = build_prompt(articles)
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    response = model.generate_content(prompt)
+    client = genai.Client(api_key=api_key)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+    )
 
     print(response.text)
 
